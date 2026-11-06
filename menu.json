@@ -1,0 +1,116 @@
+{
+  "restaurante": {
+    "nome": "Nome do Restaurante",
+    "slogan": "Toque em um prato para vê-lo em 3D",
+    "inicial": "R",
+    "moeda": "R$",
+    "rodape": "Wi-Fi: NomeDaRede · Senha: 12345678 · @seurestaurante"
+  },
+  "pratos": [
+    {
+      "id": 1,
+      "categoria": "Entradas",
+      "nome": "Bruschetta Caprese",
+      "preco": 28.9,
+      "emoji": "🍅",
+      "descricao": "Pão artesanal tostado, tomate fresco, muçarela de búfala e manjericão.",
+      "tags": [
+        "Vegetariano"
+      ],
+      "imagem": "img/prato1.jpg",
+      "modelo": ""
+    },
+    {
+      "id": 2,
+      "categoria": "Entradas",
+      "nome": "Carpaccio da Casa",
+      "preco": 42,
+      "emoji": "🥩",
+      "descricao": "Lâminas finas de carne, alcaparras, rúcula e lascas de parmesão.",
+      "tags": [
+        "Sem glúten"
+      ],
+      "imagem": "img/prato2.jpg",
+      "modelo": ""
+    },
+    {
+      "id": 3,
+      "categoria": "Pratos principais",
+      "nome": "Risoto de Cogumelos",
+      "preco": 68,
+      "emoji": "🍚",
+      "descricao": "Arroz arbório cremoso com mix de cogumelos frescos e azeite trufado.",
+      "tags": [
+        "Vegetariano",
+        "Chef"
+      ],
+      "imagem": "img/prato3.jpg",
+      "modelo": ""
+    },
+    {
+      "id": 4,
+      "categoria": "Pratos principais",
+      "nome": "Filé ao Molho Madeira",
+      "preco": 79.9,
+      "emoji": "🥘",
+      "descricao": "Filé mignon grelhado, molho madeira e batatas rústicas.",
+      "tags": [
+        "Mais pedido"
+      ],
+      "imagem": "img/prato4.jpg",
+      "modelo": ""
+    },
+    {
+      "id": 5,
+      "categoria": "Pratos principais",
+      "nome": "Salmão Grelhado",
+      "preco": 74.5,
+      "emoji": "🐟",
+      "descricao": "Salmão com crosta de ervas, legumes salteados e purê de mandioquinha.",
+      "tags": [
+        "Sem glúten"
+      ],
+      "imagem": "img/prato5.jpg",
+      "modelo": ""
+    },
+    {
+      "id": 6,
+      "categoria": "Sobremesas",
+      "nome": "Petit Gâteau",
+      "preco": 32,
+      "emoji": "🍫",
+      "descricao": "Bolinho quente de chocolate com sorvete de creme.",
+      "tags": [
+        "Chef"
+      ],
+      "imagem": "img/prato6.jpg",
+      "modelo": ""
+    },
+    {
+      "id": 7,
+      "categoria": "Bebidas",
+      "nome": "Limonada Siciliana",
+      "preco": 16,
+      "emoji": "🍋",
+      "descricao": "Limão siciliano, hortelã e um toque de gengibre.",
+      "tags": [
+        "Sem álcool"
+      ],
+      "imagem": "img/prato7.jpg",
+      "modelo": ""
+    },
+    {
+      "id": 8,
+      "categoria": "Bebidas",
+      "nome": "Vinho da Casa (taça)",
+      "preco": 29,
+      "emoji": "🍷",
+      "descricao": "Seleção do sommelier, tinto ou branco.",
+      "tags": [
+        "Álcool"
+      ],
+      "imagem": "img/prato8.jpg",
+      "modelo": ""
+    }
+  ]
+}

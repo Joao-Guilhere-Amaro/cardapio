@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel · Recepção</title>
+<style>
+:root{--bg:#141416;--surface:#1f1f23;--s2:#2a2a30;--text:#f3efe7;--muted:#a09b91;--accent:#c8a45c;--ink:#1a1405;--line:#33333a;--ok:#6fbf8b;--warn:#e0a458;--bad:#d9786c}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh}
+button,input{font:inherit;color:inherit}button{cursor:pointer;border:0}
+input{-webkit-user-select:text;user-select:text}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---- Login ---- */
+.loginwrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+#login{width:min(360px,100%);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:34px 28px;display:grid;gap:16px;text-align:center}
+.logo{width:56px;height:56px;border-radius:50%;border:1px solid var(--accent);display:grid;place-items:center;margin:auto;color:var(--accent);font-size:24px;font-family:Georgia,serif}
+#login h1{font-size:22px}#login p{color:var(--muted);font-size:14px}
+.pinwrap{position:relative}
+#pin{width:100%;padding:14px 48px 14px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:20px;letter-spacing:.3em;text-align:center}
+#olho{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;padding:8px 10px;font-size:18px;opacity:.7}
+.b{background:var(--accent);color:var(--ink);padding:12px 16px;border-radius:12px;font-weight:600}
+.b:disabled{opacity:.6}.b.g{background:var(--s2);color:var(--text);font-weight:500}.b.r{background:none;color:var(--bad);padding:9px 6px;font-weight:500}.b.sm{padding:9px 14px;border-radius:10px}
+#err{color:var(--bad);font-size:14px;min-height:20px}
+
+/* ---- Painel ---- */
+header{display:flex;gap:12px;align-items:center;padding:14px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5;flex-wrap:wrap}
+header .logo{width:38px;height:38px;font-size:17px;margin:0}
+h1.t{font-size:18px;font-weight:600;margin-right:auto}h1.t small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.tab{padding:8px 18px;border-radius:999px;background:none;border:1px solid var(--line);color:var(--muted)}.tab.on{background:var(--accent);color:var(--ink);border-color:var(--accent);font-weight:600}
+.live{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}.dot{width:9px;height:9px;border-radius:50%;background:var(--bad)}.dot.on{background:var(--ok)}
+main{padding:20px 22px 50px;max-width:1500px;margin:auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}.kpi span{font-size:12px;color:var(--muted)}.kpi b{display:block;font-size:26px;margin-top:2px}
+.cols{display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:16px;overflow-x:auto;padding-bottom:6px}
+.col h2{font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.col>div{display:grid;gap:12px;align-content:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:9px}
+.card.novo{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);animation:pulse 1.6s ease-out 2}
+@keyframes pulse{from{box-shadow:0 0 0 6px #c8a45c55}}
+.mesa{font-size:22px;font-weight:700;color:var(--accent)}.meta{font-size:12px;color:var(--muted)}
+.card ul{list-style:none;padding:0;display:grid;gap:3px}.obs{font-size:13px;color:var(--warn);background:#e0a45814;padding:6px 10px;border-radius:8px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mesas{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.chip{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--s2);color:var(--muted)}.chip.oc{background:var(--accent);color:var(--ink);font-weight:600}
+.add{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}.add input{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;min-width:240px}
+.vazio{color:var(--muted);font-size:14px;padding:12px;border:1px dashed var(--line);border-radius:12px;text-align:center}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--ink);padding:12px 20px;border-radius:12px;font-weight:600;z-index:20}
+@media(max-width:900px){.cols{grid-template-columns:repeat(4,82vw)}}
+</style></head><body>
+
+<div class="loginwrap" id="loginwrap">
+  <form id="login" autocomplete="off">
+    <div class="logo" id="lLogo">R</div>
+    <div><h1 id="lNome">Painel da recepção</h1><p>Digite o PIN para entrar</p></div>
+    <div class="pinwrap">
+      <input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="••••" aria-label="PIN">
+      <button type="button" id="olho" aria-label="Mostrar PIN">👁</button>
+    </div>
+    <button class="b" type="submit" id="entrar">Entrar</button>
+    <p id="err" role="alert"></p>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="logo" id="hLogo">R</div>
+    <h1 class="t"><span id="hNome">Restaurante</span><small>Painel da recepção</small></h1>
+    <button class="tab on" data-t="pedidos">Pedidos</button>
+    <button class="tab" data-t="mesas">Mesas</button>
+    <span class="live"><span class="dot" id="dot"></span><span id="liveTxt">Conectando…</span></span>
+    <button class="b g sm" id="sair">Sair</button>
+  </header>
+  <main id="main"></main>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+const $=s=>document.querySelector(s), brl=v=>'R$ '+v.toFixed(2).replace('.',',');
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let senha=sessionStorage.getItem('pin')||'', db={mesas:[],pedidos:[]}, aba='pedidos', es, som=true;
+const api=(url,m='GET',body)=>fetch(url,{method:m,headers:{'x-pin':senha,'Content-Type':'application/json'},body:body&&JSON.stringify(body)}).then(r=>{if(r.status===401)throw 401;return r.json()});
+const hora=iso=>new Date(iso).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+const ABERTO=p=>!['pago','cancelado'].includes(p.status);
+const hoje=p=>new Date(p.criadoEm).toDateString()===new Date().toDateString();
+const toast=t=>{const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3500)};
+
+fetch('/api/menu').then(r=>r.json()).then(m=>{const r=m.restaurante;$('#lNome').textContent=r.nome;$('#hNome').textContent=r.nome;$('#lLogo').textContent=$('#hLogo').textContent=r.inicial;document.title='Painel · '+r.nome}).catch(()=>{});
+
+$('#olho').onclick=()=>{const p=$('#pin');p.type=p.type==='password'?'text':'password'};
+$('#login').onsubmit=e=>{e.preventDefault();entrar($('#pin').value.trim())};
+$('#sair').onclick=()=>{sessionStorage.removeItem('pin');es&&es.close();location.reload()};
+
+async function entrar(tentativa){
+  if(!tentativa){$('#err').textContent='Digite o PIN';return}
+  $('#entrar').disabled=true;$('#err').textContent='';
+  try{
+    senha=tentativa;db=await api('/api/painel');sessionStorage.setItem('pin',senha);
+    $('#loginwrap').hidden=true;$('#app').hidden=false;render();conectar();
+  }catch(e){
+    sessionStorage.removeItem('pin');
+    $('#err').textContent=e===401?'PIN incorreto':'Não foi possível falar com o servidor';
+    $('#pin').value='';$('#pin').focus();
+  }
+  $('#entrar').disabled=false;
+}
+function conectar(){
+  es&&es.close();es=new EventSource('/api/eventos?pin='+encodeURIComponent(senha));
+  es.onopen=()=>{$('#dot').classList.add('on');$('#liveTxt').textContent='Ao vivo';recarregar()};
+  es.onerror=()=>{$('#dot').classList.remove('on');$('#liveTxt').textContent='Reconectando…'};
+  es.addEventListener('novo',async e=>{const p=JSON.parse(e.data);beep();toast(`Novo pedido · Mesa ${p.mesa}`);await recarregar()});
+  ['atualizado','mesas'].forEach(t=>es.addEventListener(t,recarregar));
+}
+async function recarregar(){try{db=await api('/api/painel');render()}catch(e){if(e===401)$('#sair').click()}}
+function beep(){try{const c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.setValueAtTime(.25,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.7);o.start();o.stop(c.currentTime+.7)}catch(e){}}
+
+const COLS=[['novo','Novos','preparando','Iniciar preparo'],['preparando','Em preparo','pronto','Marcar pronto'],['pronto','Prontos','entregue','Entregue à mesa'],['entregue','Entregues',null,null]];
+function render(){aba==='pedidos'?renderPedidos():renderMesas()}
+function kpis(){
+  const h=db.pedidos.filter(hoje),vendas=h.filter(p=>p.status!=='cancelado').reduce((a,p)=>a+p.total,0);
+  const oc=db.mesas.filter(m=>db.pedidos.some(p=>p.mesa===m&&ABERTO(p))).length;
+  return `<div class="kpis"><div class="kpi"><span>Aguardando</span><b>${db.pedidos.filter(p=>p.status==='novo').length}</b></div>
+  <div class="kpi"><span>Em preparo</span><b>${db.pedidos.filter(p=>p.status==='preparando').length}</b></div>
+  <div class="kpi"><span>Mesas ocupadas</span><b>${oc}/${db.mesas.length}</b></div>
+  <div class="kpi"><span>Vendas de hoje</span><b>${brl(vendas)}</b></div></div>`;
+}
+function renderPedidos(){
+  $('#main').innerHTML=kpis()+'<div class="cols">'+COLS.map(([st,nome,prox,txt])=>{
+    let l=db.pedidos.filter(p=>p.status===st);if(st==='entregue')l=l.filter(hoje);l=l.reverse();
+    return `<div class="col"><h2>${nome} (${l.length})</h2><div>${l.map(p=>`
+      <div class="card ${st}"><div class="row"><span class="mesa">Mesa ${esc(p.mesa)}</span><span class="meta">#${p.id} · ${hora(p.criadoEm)}</span></div>
+      <ul>${p.itens.map(i=>`<li><b>${i.qtd}×</b> ${esc(i.nome)}</li>`).join('')}</ul>
+      ${p.obs?`<div class="obs">${esc(p.obs)}</div>`:''}
+      <div class="row"><b>${brl(p.total)}</b><span>${prox?`<button class="b sm" onclick="st(${p.id},'${prox}')">${txt}</button>`:''}${st!=='entregue'?`<button class="b r" onclick="if(confirm('Cancelar o pedido #${p.id}?'))st(${p.id},'cancelado')">Cancelar</button>`:''}</span></div></div>`).join('')||'<div class="vazio">Nenhum pedido</div>'}</div></div>`}).join('')+'</div>';
+}
+function renderMesas(){
+  $('#main').innerHTML=kpis()+`<form class="add" onsubmit="addMesa(event)"><input id="nm" placeholder="Nova mesa (ex.: 11 ou Varanda 2)" maxlength="20"><button class="b" type="submit">Adicionar mesa</button></form><div class="mesas">`+
+  db.mesas.map(m=>{const ab=db.pedidos.filter(p=>p.mesa===m&&ABERTO(p)),t=ab.reduce((a,p)=>a+p.total,0),k=encodeURIComponent(m);
+    return `<div class="card"><div class="row"><span class="mesa">Mesa ${esc(m)}</span><span class="chip ${ab.length?'oc':''}">${ab.length?'Ocupada':'Livre'}</span></div>
+    <div class="meta">${ab.length?`${ab.length} pedido(s) em aberto`:'Sem pedidos em aberto'}</div><div style="font-size:22px;font-weight:600">${brl(t)}</div>
+    ${ab.length?`<button class="b" onclick="fechar(decodeURIComponent('${k}'),${t})">Fechar conta</button>`:''}
+    <button class="b g" onclick="copiar(decodeURIComponent('${k}'))">Copiar link da placa NFC</button>
+    <button class="b r" onclick="rm(decodeURIComponent('${k}'))">Remover mesa</button></div>`}).join('')+'</div>';
+}
+const st=(id,status)=>api('/api/pedidos/'+id,'PATCH',{status});
+const addMesa=async e=>{e.preventDefault();const r=await api('/api/mesas','POST',{nome:$('#nm').value});r.erro?toast(r.erro):recarregar()};
+const rm=m=>confirm('Remover a mesa '+m+'?')&&api('/api/mesas/'+encodeURIComponent(m),'DELETE');
+const fechar=(m,t)=>confirm(`Fechar a conta da mesa ${m}?\nTotal: ${brl(t)}`)&&api('/api/mesas/'+encodeURIComponent(m)+'/fechar','POST');
+const copiar=m=>{const u=location.origin+'/?mesa='+encodeURIComponent(m);navigator.clipboard?navigator.clipboard.writeText(u).then(()=>toast('Link copiado: '+u),()=>prompt('Copie o link:',u)):prompt('Copie o link:',u)};
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{aba=b.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));render()});
+if(senha)entrar(senha);
+</script></body></html>

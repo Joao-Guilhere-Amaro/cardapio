@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cardápio Digital</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Visualizador de modelos 3D reais (.glb). Só é usado nos pratos que tiverem "modelo". -->
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<style>
+/* ===== CORES: altere só aqui para trocar o tema inteiro ===== */
+:root{
+  --bg:#17171a;          /* fundo principal */
+  --surface:#222226;     /* cartões */
+  --surface-2:#2c2c31;
+  --text:#f3efe7;
+  --muted:#a9a49a;
+  --accent:#c8a45c;      /* dourado champanhe: combina com quase todo restaurante */
+  --accent-ink:#1a1405;
+  --line:#34343a;
+  --radius:18px;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* ----- Topo ----- */
+header{text-align:center;padding:56px 20px 28px}
+.logo{width:72px;height:72px;border-radius:50%;border:1px solid var(--accent);display:grid;place-items:center;margin:0 auto 18px;font-family:var(--serif);font-size:30px;color:var(--accent)}
+header h1{font-family:var(--serif);font-size:clamp(38px,8vw,64px);font-weight:600;letter-spacing:.01em;line-height:1.05}
+header p{color:var(--muted);margin-top:10px}
+
+/* ----- Categorias ----- */
+nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:14px 20px;max-width:1100px;margin:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:9px 20px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;transition:.2s}
+.tab[aria-selected=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+
+/* ----- Lista de pratos ----- */
+main{max-width:1100px;margin:auto;padding:32px 20px 80px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
+.card{background:var(--surface);border-radius:var(--radius);overflow:hidden;text-align:left;border:1px solid var(--line);display:flex;flex-direction:column;transition:transform .25s,border-color .25s}
+.card:hover{transform:translateY(-4px);border-color:var(--accent)}
+.thumb{aspect-ratio:4/3;background:var(--surface-2);position:relative;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.badge3d{position:absolute;top:12px;right:12px;background:var(--accent);color:var(--accent-ink);font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px}
+.info{padding:18px 20px 22px;display:flex;flex-direction:column;gap:6px;flex:1}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.info h3{font-family:var(--serif);font-size:25px;font-weight:600;line-height:1.15}
+.price{color:var(--accent);font-weight:600;white-space:nowrap}
+.info p{color:var(--muted);font-size:14px}
+
+/* placeholder quando a imagem não existe */
+.ph{width:100%;height:100%;display:grid;place-items:center;font-size:64px;background:radial-gradient(circle at 30% 20%,var(--surface-2),var(--bg))}
+
+/* ----- Janela do prato (3D) ----- */
+dialog{border:0;padding:0;background:var(--surface);color:var(--text);width:min(960px,94vw);max-height:92vh;border-radius:24px;overflow:auto;margin:auto}
+dialog::backdrop{background:rgba(0,0,0,.72);backdrop-filter:blur(4px)}
+.modal{display:grid;grid-template-columns:1.15fr 1fr}
+@media(max-width:760px){.modal{grid-template-columns:1fr}}
+.stage{background:radial-gradient(circle at 50% 40%,#3a3a41,#16161a 75%);min-height:380px;position:relative;display:grid;place-items:center;overflow:hidden;touch-action:none;cursor:grab;perspective:900px}
+.stage:active{cursor:grabbing}
+model-viewer{width:100%;height:100%;min-height:380px;--poster-color:transparent}
+.hint{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);pointer-events:none}
+
+/* prato giratório em CSS 3D (usado quando não há modelo .glb) */
+.plate{width:min(78%,340px);aspect-ratio:1;position:relative;transform-style:preserve-3d;will-change:transform}
+.layer{position:absolute;inset:0;border-radius:50%;background:#d9d4c8;overflow:hidden}
+.layer.top{background:#fff;padding:7%}
+.layer.top .food{width:100%;height:100%;border-radius:50%;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 0 0 6px rgba(0,0,0,.05)}
+.layer.top img,.layer.top .ph{width:100%;height:100%;object-fit:cover;font-size:90px}
+.shadow3d{position:absolute;width:70%;aspect-ratio:1;border-radius:50%;background:rgba(0,0,0,.55);filter:blur(28px);transform:translateY(40%) scale(1.05)}
+
+.detail{padding:34px 30px;display:flex;flex-direction:column;gap:14px}
+.detail h2{font-family:var(--serif);font-size:38px;line-height:1.05;font-weight:600}
+.detail .price{font-size:22px}
+.detail p{color:var(--muted)}
+.tags{display:flex;gap:8px;flex-wrap:wrap}
+.tag{font-size:13px;border:1px solid var(--line);padding:4px 12px;border-radius:999px;color:var(--text)}
+.close{position:absolute;top:14px;right:14px;z-index:3;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.5);font-size:20px}
+.btn{margin-top:auto;background:var(--accent);color:var(--accent-ink);font-weight:600;padding:14px;border-radius:14px}
+
+.actions{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.btn{text-align:center;text-decoration:none;display:block;width:100%;margin-top:0}
+.btn.alt{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.alt:hover{border-color:var(--accent)}
+dialog[open]{animation:pop .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes pop{from{opacity:0;transform:translateY(18px) scale(.97)}}
+.stage::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 110%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 60%);pointer-events:none}
+
+/* ----- Modo câmera (provar o prato na mesa) ----- */
+#camDlg{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;background:#000;overflow:hidden;animation:none}
+#camDlg video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#camTouch{position:absolute;inset:0;touch-action:none}
+#camPlate{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);perspective:900px;pointer-events:none}
+#camPlate .plate{width:100%}
+#camPlate .shadow3d{left:15%;top:15%}
+.camTop{position:absolute;top:0;left:0;right:0;padding:18px 70px 40px 18px;background:linear-gradient(#000a,transparent);font-size:14px;z-index:2}
+.camBar{position:absolute;bottom:0;left:0;right:0;padding:22px 20px 30px;background:linear-gradient(transparent,#000c);display:grid;gap:12px;z-index:2}
+.camBar label{display:grid;grid-template-columns:90px 1fr;align-items:center;font-size:13px;color:#ddd}
+.camBar input{accent-color:var(--accent);width:100%}
+.mesaChip{display:inline-block;margin-top:14px;border:1px solid var(--accent);color:var(--accent);padding:5px 16px;border-radius:999px;font-size:14px}
+#cartBar{position:fixed;left:16px;right:16px;bottom:16px;z-index:20;max-width:520px;margin:auto;background:var(--accent);color:var(--accent-ink);font-weight:600;padding:16px 20px;border-radius:16px;display:flex;justify-content:space-between;box-shadow:0 10px 30px #0008}
+#cartBar[hidden]{display:none}
+#cartDlg{width:min(480px,94vw)}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.qty{display:flex;gap:10px;align-items:center}.qty button{width:30px;height:30px;border-radius:50%;background:var(--surface-2);font-size:18px}
+.field{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px;width:100%;color:var(--text);font:inherit}
+.status{font-size:18px;color:var(--accent);font-weight:600}
+footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 20px 50px;border-top:1px solid var(--line)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" id="logo">R</div>
+  <h1 id="nome">Nome do Restaurante</h1>
+  <p id="slogan">Toque em um prato para vê-lo em 3D</p>
+  <span class="mesaChip" id="mesaChip" hidden></span>
+</header>
+
+<nav><div class="tabs" id="tabs" role="tablist"></div></nav>
+<main><div class="grid" id="grid"></div></main>
+<footer id="rodape">Wi-Fi: NomeDaRede · Senha: 12345678 · @seurestaurante</footer>
+
+<dialog id="dlg" aria-label="Detalhes do prato">
+  <button class="close" id="fechar" aria-label="Fechar">✕</button>
+  <div class="modal">
+    <div class="stage" id="stage"></div>
+    <div class="detail" id="detail"></div>
+  </div>
+</dialog>
+
+<button id="cartBar" hidden onclick="abrirCarrinho()"><span></span><span>Ver pedido</span></button>
+<dialog id="cartDlg" aria-label="Seu pedido"><button class="close" onclick="cartDlg.close()" aria-label="Fechar">✕</button><div class="detail" id="cartBody"></div></dialog>
+
+<dialog id="camDlg" aria-label="Ver o prato na sua mesa">
+  <video id="camVideo" autoplay playsinline muted></video>
+  <div id="camTouch"></div>
+  <div id="camPlate"></div>
+  <div class="camTop" id="camMsg"></div>
+  <button class="close" id="camFechar" aria-label="Fechar câmera">✕</button>
+  <div class="camBar">
+    <label>Tamanho <input type="range" id="sSize" min="120" max="460" value="260"></label>
+    <label>Inclinação <input type="range" id="sTilt" min="15" max="80" value="55"></label>
+    <label>Girar <input type="range" id="sRot" min="0" max="360" value="0"></label>
+  </div>
+</dialog>
+
+<script>
+/* =====================================================================
+   Os dados do restaurante e dos pratos ficam no arquivo menu.json (na raiz do projeto).
+   Edite lá: não precisa mexer neste arquivo. Campos de cada prato:
+   - imagem: caminho da foto (ex.: "img/risoto.jpg"). Se não existir, aparece o emoji.
+   - modeloIos: (opcional) versão .usdz do mesmo modelo, para a realidade aumentada nativa do iPhone.
+   - modelo: (opcional) arquivo 3D real "modelos/risoto.glb". Se vazio, usa o prato giratório 3D com a foto.
+   ===================================================================== */
+let RESTAURANTE = {}, PRATOS = [];   // vêm do arquivo menu.json (pelo servidor)
+
+/* ===================== Código (não precisa mexer) ===================== */
+const $ = s => document.querySelector(s);
+const brl = v => RESTAURANTE.moeda + " " + v.toFixed(2).replace(".", ",");
+let cats = [];
+let catAtual = "Todos";
+
+function iniciar() {
+  $("#nome").textContent = RESTAURANTE.nome;
+  $("#slogan").textContent = RESTAURANTE.slogan;
+  $("#logo").textContent = RESTAURANTE.inicial;
+  $("#rodape").textContent = RESTAURANTE.rodape;
+  document.title = "Cardápio · " + RESTAURANTE.nome;
+  cats = ["Todos", ...new Set(PRATOS.map(p => p.categoria))];
+  renderTabs(); renderGrid();
+}
+
+function foto(p, cls = "") {
+  const img = new Image();
+  img.alt = p.nome; img.loading = "lazy";
+  img.onerror = () => { const d = document.createElement("div"); d.className = "ph"; d.textContent = p.emoji; img.replaceWith(d); };
+  img.src = p.imagem;
+  return img;
+}
+
+function renderTabs() {
+  const t = $("#tabs"); t.innerHTML = "";
+  cats.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "tab"; b.role = "tab"; b.textContent = c;
+    b.setAttribute("aria-selected", c === catAtual);
+    b.onclick = () => { catAtual = c; renderTabs(); renderGrid(); };
+    t.appendChild(b);
+  });
+}
+
+function renderGrid() {
+  const g = $("#grid"); g.innerHTML = "";
+  PRATOS.filter(p => catAtual === "Todos" || p.categoria === catAtual).forEach(p => {
+    const c = document.createElement("button");
+    c.className = "card";
+    c.innerHTML = `<div class="thumb"><span class="badge3d">Ver em 3D</span></div>
+      <div class="info"><div class="row"><h3>${p.nome}</h3><span class="price">${brl(p.preco)}</span></div><p>${p.descricao}</p></div>`;
+    c.querySelector(".thumb").prepend(foto(p));
+    c.onclick = () => abrir(p);
+    g.appendChild(c);
+  });
+}
+
+/* ---------- Prato 3D em camadas (usado no visualizador e na câmera) ---------- */
+function buildPlate(p, plate) {
+  for (let i = 7; i >= 1; i--) {
+    const l = document.createElement("div");
+    l.className = "layer"; l.style.transform = `translateZ(${-i * 1.6}px)`;
+    l.style.filter = `brightness(${0.62 + i * 0.03})`; plate.appendChild(l);
+  }
+  const top = document.createElement("div"); top.className = "layer top";
+  const f = document.createElement("div"); f.className = "food"; f.appendChild(foto(p));
+  top.appendChild(f); plate.appendChild(top);
+}
+
+/* ---------- Visualizador 3D ---------- */
+let raf, auto = true;
+function abrir(p) {
+  const stage = $("#stage"); stage.innerHTML = ""; cancelAnimationFrame(raf);
+
+  if (p.modelo) {                         // modelo 3D real (.glb)
+    stage.innerHTML = `<model-viewer src="${p.modelo}" ${p.modeloIos ? `ios-src="${p.modeloIos}"` : ""} alt="${p.nome}" ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" ar-placement="floor" camera-controls auto-rotate
+      shadow-intensity="1" exposure="1.1" interaction-prompt="none"></model-viewer>
+      <div class="hint">Arraste para girar · pinça para ampliar</div>`;
+  } else {                                // prato giratório em CSS 3D usando a foto
+    stage.innerHTML = `<div class="shadow3d"></div><div class="plate" id="plate"></div>
+      <div class="hint">Arraste para girar e inclinar o prato</div>`;
+    const plate = $("#plate");
+    buildPlate(p, plate);
+
+    let rz = 0, rx = 52, drag = false, lx = 0, ly = 0; auto = true;
+    const draw = () => plate.style.transform = `rotateX(${rx}deg) rotateZ(${rz}deg)`;
+    const loop = () => { if (auto) rz += 0.35; draw(); raf = requestAnimationFrame(loop); };
+    stage.onpointerdown = e => { drag = true; auto = false; lx = e.clientX; ly = e.clientY; stage.setPointerCapture(e.pointerId); };
+    stage.onpointermove = e => { if (!drag) return; rz += (e.clientX - lx) * 0.6; rx = Math.min(75, Math.max(15, rx - (e.clientY - ly) * 0.3)); lx = e.clientX; ly = e.clientY; };
+    stage.onpointerup = () => { drag = false; setTimeout(() => auto = true, 1800); };
+    loop();
+  }
+
+  $("#detail").innerHTML = `<div class="tags">${[p.categoria, ...p.tags].map(t => `<span class="tag">${t}</span>`).join("")}</div>
+    <h2>${p.nome}</h2><span class="price">${brl(p.preco)}</span><p>${p.descricao}</p>
+    <div class="actions">
+      <button class="btn" id="addBtn">Adicionar ao pedido</button>
+      <button class="btn alt" id="arBtn">Ver na minha mesa</button>
+    </div>`;
+  $("#addBtn").onclick = () => addCarrinho(p);
+  $("#arBtn").onclick = () => {
+    const mv = document.querySelector("model-viewer");
+    if (p.modelo && mv && mv.canActivateAR) mv.activateAR();   // AR nativo (modelo .glb)
+    else abrirCamera(p);                                       // câmera + prato sobreposto
+  };
+  $("#dlg").showModal();
+}
+
+/* ---------- Câmera: prato sobre a mesa do cliente ---------- */
+let stream, cam = { x: 0, y: 0, size: 260, tilt: 55, rot: 0 };
+function aplicaCam() {
+  const w = $("#camPlate"), pl = w.querySelector(".plate");
+  w.style.left = cam.x + "px"; w.style.top = cam.y + "px"; w.style.width = cam.size + "px";
+  if (pl) pl.style.transform = `rotateX(${cam.tilt}deg) rotateZ(${cam.rot}deg)`;
+  $("#sSize").value = cam.size;
+}
+async function abrirCamera(p) {
+  const w = $("#camPlate"); w.innerHTML = '<div class="shadow3d"></div>';
+  const pl = document.createElement("div"); pl.className = "plate"; buildPlate(p, pl); w.appendChild(pl);
+  cam = { x: innerWidth / 2, y: innerHeight * 0.52, size: Math.min(300, innerWidth * 0.7), tilt: 55, rot: 0 };
+  $("#sTilt").value = 55; $("#sRot").value = 0; aplicaCam();
+  $("#camMsg").textContent = "Aponte a câmera para a mesa. Arraste para posicionar e use dois dedos para ampliar.";
+  $("#camDlg").showModal();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+    $("#camVideo").srcObject = stream;
+  } catch (e) {
+    $("#camMsg").textContent = "Não foi possível abrir a câmera. Permita o acesso quando o navegador pedir (o cardápio precisa estar em um link https).";
+  }
+}
+function fechaCamera() { stream && stream.getTracks().forEach(t => t.stop()); stream = null; $("#camDlg").close(); }
+$("#camFechar").onclick = fechaCamera;
+$("#camDlg").addEventListener("cancel", () => stream && stream.getTracks().forEach(t => t.stop()));
+$("#sSize").oninput = e => { cam.size = +e.target.value; aplicaCam(); };
+$("#sTilt").oninput = e => { cam.tilt = +e.target.value; aplicaCam(); };
+$("#sRot").oninput = e => { cam.rot = +e.target.value; aplicaCam(); };
+const pts = new Map(); let d0 = 0; const touch = $("#camTouch");
+const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+touch.onpointerdown = e => { pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); touch.setPointerCapture(e.pointerId); if (pts.size === 2) d0 = dist(); };
+touch.onpointermove = e => {
+  if (!pts.has(e.pointerId)) return;
+  const prev = pts.get(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pts.size === 1) { cam.x += e.clientX - prev.x; cam.y += e.clientY - prev.y; }
+  else if (pts.size === 2) { const d = dist(); cam.size = Math.min(460, Math.max(120, cam.size * d / d0)); d0 = d; }
+  aplicaCam();
+};
+touch.onpointerup = touch.onpointercancel = e => pts.delete(e.pointerId);
+touch.onwheel = e => { cam.size = Math.min(460, Math.max(120, cam.size - e.deltaY * 0.3)); aplicaCam(); };
+
+/* ---------- Pedido ---------- */
+const params = new URLSearchParams(location.search);
+if (params.get("mesa")) sessionStorage.setItem("mesa", params.get("mesa"));
+const MESA = sessionStorage.getItem("mesa") || "";
+if (MESA) { $("#mesaChip").hidden = false; $("#mesaChip").textContent = "Mesa " + MESA; }
+let carrinho = [], pollId;
+const total = () => carrinho.reduce((a, i) => a + i.preco * i.qtd, 0);
+function barra() {
+  const q = carrinho.reduce((a, i) => a + i.qtd, 0);
+  $("#cartBar").hidden = !q; $("#cartBar span").textContent = q + (q > 1 ? " itens · " : " item · ") + brl(total());
+}
+function addCarrinho(p) {
+  const i = carrinho.find(x => x.id === p.id); i ? i.qtd++ : carrinho.push({ id: p.id, nome: p.nome, preco: p.preco, qtd: 1 });
+  barra(); dlg.close();
+}
+function mudaQtd(id, d) { const i = carrinho.find(x => x.id === id); i.qtd += d; carrinho = carrinho.filter(x => x.qtd > 0); barra(); carrinho.length ? abrirCarrinho() : $("#cartDlg").close(); }
+function abrirCarrinho() {
+  $("#cartBody").innerHTML = `<h2>Seu pedido</h2>` + carrinho.map(i => `<div class="item"><span>${i.nome}<br><small style="color:var(--muted)">${brl(i.preco)}</small></span>
+    <span class="qty"><button onclick="mudaQtd(${i.id},-1)">−</button>${i.qtd}<button onclick="mudaQtd(${i.id},1)">+</button></span></div>`).join("") +
+    `<div class="row" style="font-size:20px"><span>Total</span><span class="price">${brl(total())}</span></div>
+    <input class="field" id="cMesa" placeholder="Número da mesa" value="${MESA}" ${MESA ? "readonly" : ""}>
+    <input class="field" id="cObs" placeholder="Observações (ex.: sem cebola)" maxlength="200">
+    <p id="cErr" style="color:#d9786c;font-size:14px"></p><button class="btn" id="cEnviar">Enviar pedido</button>`;
+  $("#cEnviar").onclick = enviar; if (!$("#cartDlg").open) $("#cartDlg").showModal();
+}
+async function enviar() {
+  const btn = $("#cEnviar"); btn.disabled = true; btn.textContent = "Enviando...";
+  try {
+    const r = await fetch("/api/pedidos", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mesa: $("#cMesa").value.trim(), obs: $("#cObs").value, itens: carrinho }) });
+    const d = await r.json(); if (!r.ok) throw new Error(d.erro || "Erro");
+    carrinho = []; barra(); acompanhar(d.id);
+  } catch (e) { $("#cErr").textContent = e.message === "Failed to fetch" ? "Sem conexão com o restaurante. Tente de novo." : e.message; btn.disabled = false; btn.textContent = "Enviar pedido"; }
+}
+const ROTULO = { novo: "Pedido recebido", preparando: "Em preparo", pronto: "Pronto, já vai para a mesa", entregue: "Entregue. Bom apetite!", cancelado: "Pedido cancelado" };
+function acompanhar(id) {
+  $("#cartBody").innerHTML = `<h2>Pedido #${id}</h2><p class="status" id="stTxt">${ROTULO.novo}</p><p style="color:var(--muted)">Você pode fechar esta janela. Para pedir mais, escolha outro prato.</p>`;
+  clearInterval(pollId);
+  pollId = setInterval(async () => {
+    try { const d = await (await fetch("/api/pedidos/" + id)).json(); const el = $("#stTxt"); if (el) el.textContent = ROTULO[d.status] || d.status;
+      if (["entregue", "cancelado"].includes(d.status)) clearInterval(pollId); } catch (e) {}
+  }, 5000);
+}
+
+const dlg = $("#dlg");
+const fechar = () => { cancelAnimationFrame(raf); dlg.close(); };
+$("#fechar").onclick = fechar;
+dlg.addEventListener("click", e => { if (e.target === dlg) fechar(); });
+dlg.addEventListener("close", () => cancelAnimationFrame(raf));
+
+fetch("/api/menu").then(r => r.json()).then(m => { RESTAURANTE = m.restaurante; PRATOS = m.pratos; iniciar(); })
+  .catch(() => { $("#grid").innerHTML = '<p style="color:var(--muted)">Não foi possível carregar o cardápio. Chame o atendente.</p>'; });
+</script>
+</body>
+</html>

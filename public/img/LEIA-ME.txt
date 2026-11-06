@@ -1,0 +1,1 @@
+Coloque aqui as fotos dos pratos (prato1.jpg, prato2.jpg...) e ajuste o campo imagem no menu.json.
